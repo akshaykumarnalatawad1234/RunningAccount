@@ -1,0 +1,2 @@
+# RunningAccount
+This is a java springboot project which has four apis implemented i.e., create account, debit, credit and fetch acount details. But instead summing up entire transactions of the month to a single bill and making credit for that summed up amount, running account considers each debit transaction as a potential loan for which it'll will interestFreeDays to pay the bill else the interest gets added.
