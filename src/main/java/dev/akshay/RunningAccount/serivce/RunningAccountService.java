@@ -1,9 +1,9 @@
 package dev.akshay.RunningAccount.serivce;
 
+import dev.akshay.RunningAccount.domain.*;
 import dev.akshay.RunningAccount.repository.RunningAccountRepository;
 import dev.akshay.RunningAccount.repository.TransactionRepository;
-import dev.akshay.RunningAccount.domain.RunningAccount;
-import dev.akshay.RunningAccount.domain.Transaction;
+import dev.akshay.RunningAccount.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,11 +18,37 @@ public class RunningAccountService {
     private RunningAccountRepository runningAccountRepository;
     @Autowired
     private TransactionRepository transactionRepository;
-    public void debit(int id, double amount, Date transactionDate){
+    @Autowired
+    private UserRepository userRepository;
+
+    public RunningAccount create(DummyAccount dummyAccount){
+        User user = userRepository.findById(dummyAccount.getId());
+        RunningAccount runningAccount = user.getRunningAccount();
+
+        if(user == null || runningAccount != null){
+            return null;
+        }
+        runningAccount = new RunningAccount();
+
+        runningAccount.setCreditLimit(dummyAccount.getCreditLimit());
+        runningAccount.setInterestFreePeriod(dummyAccount.getInterestFreePeriod());
+        runningAccount.setInterestRate(dummyAccount.getInterestRate());
+        runningAccount.setUser(user);
+        user.setRunningAccount(runningAccount);
+        runningAccountRepository.save(runningAccount);
+        userRepository.save(user);
+
+        return runningAccount;
+    }
+
+    public RunningAccount debit(Field field){
+        int id = field.getId();
+        double amount = field.getAmount();
+        Date transactionDate = field.getTransactionDate();
         RunningAccount runningAccount = runningAccountRepository.findById(id);
 
         double debitAmount = runningAccount.getDebitAmount();
-        if(debitAmount + amount <= runningAccount.getCreditLimit()){
+        if(runningAccount!= null && debitAmount + amount <= runningAccount.getCreditLimit()){
             double pendingAmount = amount;
             if(debitAmount<0) {
                 pendingAmount += debitAmount;
@@ -34,13 +60,15 @@ public class RunningAccountService {
             Transaction cur = new Transaction(runningAccount, transactionDate, amount, pendingAmount);
             transactionRepository.save(cur);
 //            return new ResponseEntity<>(runningAccount, HttpStatus.OK);
+            return runningAccount;
         }
-        else{
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+            return null;
     }
 
-    public void credit(int id, double amount){
+    public RunningAccount credit(Field field){
+        int id = field.getId();
+        double amount = field.getAmount();
+
         RunningAccount runningAccount = runningAccountRepository.findById(id);
         if(runningAccount != null) {
             List<Transaction> allTransactions = transactionRepository.findAllByRunningAccount(runningAccount);
@@ -68,10 +96,9 @@ public class RunningAccountService {
             }
             runningAccountRepository.save(runningAccount);
 //            return new ResponseEntity<>(runningAccount, HttpStatus.OK);
+            return runningAccount;
         }
-        else{
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        return null;
     }
 
     public double getInterest(double amount, Date transactionDate, RunningAccount runningAccount){
@@ -118,5 +145,21 @@ public class RunningAccountService {
     public double outstandingBalance(int id){
         RunningAccount runningAccount = runningAccountRepository.findById(id);
         return runningAccount.getDebitAmount();
+    }
+    public FetchAccount fetchResponse(int id){
+        FetchAccount fetchAccountResponse = new FetchAccount();
+        RunningAccount runningAccount = runningAccountRepository.findById(id);
+        if(runningAccount == null)
+            return null;
+        double dueAmount = totalDueAmount(id);
+        Map<Date, List<Double>> dates = dueDates(id);
+        double availableCredit = availableCredit(id);
+        double outstandingBalance = outstandingBalance(id);
+        fetchAccountResponse.setDates(dates);
+        fetchAccountResponse.setDueAmount(dueAmount);
+        fetchAccountResponse.setAvailableCredit(availableCredit);
+        fetchAccountResponse.setOutstandingBalance(outstandingBalance);
+
+        return fetchAccountResponse;
     }
 }

@@ -17,15 +17,12 @@ public class User {
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private int id;
-    private String name;
+    private String firstName;
+    private String middleName;
+    private String lastName;
     private Date dob;
     private String address;
     @OneToOne
     private RunningAccount runningAccount;
-    public User(String name, Date dob, String address, RunningAccount runningAccount) {
-        this.name = name;
-        this.dob = dob;
-        this.address = address;
-        this.runningAccount = null;
-    }
+
 }

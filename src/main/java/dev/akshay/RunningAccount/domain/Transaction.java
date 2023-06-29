@@ -1,7 +1,6 @@
 package dev.akshay.RunningAccount.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dev.akshay.RunningAccount.domain.RunningAccount;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
