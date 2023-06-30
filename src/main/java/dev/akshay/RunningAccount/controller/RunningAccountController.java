@@ -1,6 +1,6 @@
 package dev.akshay.RunningAccount.controller;
 
-import dev.akshay.RunningAccount.domain.DummyAccount;
+import dev.akshay.RunningAccount.domain.AccountHolder;
 import dev.akshay.RunningAccount.domain.FetchAccount;
 import dev.akshay.RunningAccount.domain.Field;
 import dev.akshay.RunningAccount.domain.RunningAccount;
@@ -22,8 +22,8 @@ public class RunningAccountController {
     private UserRepository userRepository;
 
     @RequestMapping(value = "/api/v1/runningAccount/create", method = RequestMethod.POST)
-    public ResponseEntity createAccount(@RequestBody DummyAccount dummyAccount) {
-         RunningAccount runningAccount = runningAccountService.create(dummyAccount);
+    public ResponseEntity createAccount(@RequestBody AccountHolder accountHolder) {
+         RunningAccount runningAccount = runningAccountService.create(accountHolder);
          if(runningAccount == null)
               return new ResponseEntity("Account might already exits for the user or user doesn't exist", HttpStatus.BAD_REQUEST);
         return new ResponseEntity(runningAccount, HttpStatus.CREATED);
@@ -32,7 +32,7 @@ public class RunningAccountController {
     public ResponseEntity credit(@RequestBody Field field){
         RunningAccount runningAccount = runningAccountService.credit(field);
         if(runningAccount == null)
-            return new ResponseEntity<String>("Account doesn't exit",HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<String>("Account doesn't exit or the entered amount is not valid",HttpStatus.BAD_REQUEST);
         return new ResponseEntity<RunningAccount>(runningAccount, HttpStatus.OK);
     }
     @RequestMapping(value = "/api/v1/runningAccount/debit", method = RequestMethod.POST)

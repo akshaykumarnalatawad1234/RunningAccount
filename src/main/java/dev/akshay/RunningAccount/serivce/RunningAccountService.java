@@ -21,8 +21,8 @@ public class RunningAccountService {
     @Autowired
     private UserRepository userRepository;
 
-    public RunningAccount create(DummyAccount dummyAccount){
-        User user = userRepository.findById(dummyAccount.getId());
+    public RunningAccount create(AccountHolder accountHolder){
+        User user = userRepository.findById(accountHolder.getId());
         RunningAccount runningAccount = user.getRunningAccount();
 
         if(user == null || runningAccount != null){
@@ -30,9 +30,9 @@ public class RunningAccountService {
         }
         runningAccount = new RunningAccount();
 
-        runningAccount.setCreditLimit(dummyAccount.getCreditLimit());
-        runningAccount.setInterestFreePeriod(dummyAccount.getInterestFreePeriod());
-        runningAccount.setInterestRate(dummyAccount.getInterestRate());
+        runningAccount.setCreditLimit(accountHolder.getCreditLimit());
+        runningAccount.setInterestFreePeriod(accountHolder.getInterestFreePeriod());
+        runningAccount.setInterestRate(accountHolder.getInterestRate());
         runningAccount.setUser(user);
         user.setRunningAccount(runningAccount);
         runningAccountRepository.save(runningAccount);
@@ -52,7 +52,7 @@ public class RunningAccountService {
             double pendingAmount = amount;
             if(debitAmount<0) {
                 pendingAmount += debitAmount;
-                runningAccount.setDebitAmount(amount);
+                runningAccount.setDebitAmount(pendingAmount);
             }
             else{
                 runningAccount.setDebitAmount(debitAmount + amount);
@@ -70,7 +70,7 @@ public class RunningAccountService {
         double amount = field.getAmount();
 
         RunningAccount runningAccount = runningAccountRepository.findById(id);
-        if(runningAccount != null) {
+        if(runningAccount != null && amount > 0) {
             List<Transaction> allTransactions = transactionRepository.findAllByRunningAccount(runningAccount);
             Collections.sort(allTransactions, Comparator.comparing(Transaction::getTransactionDate));
             double leftAmount = amount;
