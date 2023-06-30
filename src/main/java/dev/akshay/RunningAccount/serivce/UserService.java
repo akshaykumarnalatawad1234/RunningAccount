@@ -26,7 +26,7 @@ public class UserService {
         }
     }
 
-    public ResponseEntity createUser(UserObject userObject){
+    public ResponseEntity create(UserObject userObject){
         User user = new User();
         String fullName = userObject.getFullName();
         splitName(fullName, user);
@@ -34,5 +34,12 @@ public class UserService {
         user.setAddress(userObject.getAddress());
         userRepository.save(user);
         return new ResponseEntity<User>(user, HttpStatus.CREATED);
+    }
+    public void setUserRepository(User user){
+        userRepository.save(user);
+    }
+
+    public User findUser(int id){
+        return userRepository.findById(id);
     }
 }

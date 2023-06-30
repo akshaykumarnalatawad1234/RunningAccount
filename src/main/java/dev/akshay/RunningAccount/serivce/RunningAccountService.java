@@ -17,12 +17,12 @@ public class RunningAccountService {
     @Autowired
     private RunningAccountRepository runningAccountRepository;
     @Autowired
-    private TransactionRepository transactionRepository;
+    private TransactionService transactionService;
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     public RunningAccount create(AccountHolder accountHolder){
-        User user = userRepository.findById(accountHolder.getId());
+        User user = userService.findUser(accountHolder.getId());
         RunningAccount runningAccount = user.getRunningAccount();
 
         if(user == null || runningAccount != null){
@@ -36,7 +36,7 @@ public class RunningAccountService {
         runningAccount.setUser(user);
         user.setRunningAccount(runningAccount);
         runningAccountRepository.save(runningAccount);
-        userRepository.save(user);
+        userService.setUserRepository(user);
 
         return runningAccount;
     }
@@ -58,7 +58,7 @@ public class RunningAccountService {
                 runningAccount.setDebitAmount(debitAmount + amount);
             }
             Transaction cur = new Transaction(runningAccount, transactionDate, amount, pendingAmount);
-            transactionRepository.save(cur);
+            transactionService.setRepository(cur);
 //            return new ResponseEntity<>(runningAccount, HttpStatus.OK);
             return runningAccount;
         }
@@ -71,7 +71,7 @@ public class RunningAccountService {
 
         RunningAccount runningAccount = runningAccountRepository.findById(id);
         if(runningAccount != null && amount > 0) {
-            List<Transaction> allTransactions = transactionRepository.findAllByRunningAccount(runningAccount);
+            List<Transaction> allTransactions = transactionService.getTransactionByRunningAccount(runningAccount);
             Collections.sort(allTransactions, Comparator.comparing(Transaction::getTransactionDate));
             double leftAmount = amount;
             double debitAmount = runningAccount.getDebitAmount();
@@ -92,7 +92,7 @@ public class RunningAccountService {
                     leftAmount -= totalAmount;
                 }
                 runningAccount.setDebitAmount(runningAccount.getDebitAmount()+interest);
-                transactionRepository.save(curTransaction);
+                transactionService.setRepository(curTransaction);
             }
             runningAccountRepository.save(runningAccount);
 //            return new ResponseEntity<>(runningAccount, HttpStatus.OK);
@@ -114,7 +114,7 @@ public class RunningAccountService {
 
     public double totalDueAmount(int id){
         RunningAccount runningAccount = runningAccountRepository.findById(id);
-        List<Transaction> allTrasactions = transactionRepository.findAllByRunningAccount(runningAccount);
+        List<Transaction> allTrasactions = transactionService.getTransactionByRunningAccount(runningAccount);
         double totalAmount = 0;
         for(Transaction transaction : allTrasactions){
             double interest = getInterest(transaction.getPendingAmount(), transaction.getTransactionDate(), runningAccount);
@@ -123,15 +123,17 @@ public class RunningAccountService {
 //        runningAccount.setDebitAmount(totalAmount);
         return totalAmount;
     }
-    public Map<Date, List<Double>> dueDates(int id){
+    public Map<Date, List<List<Double>>> dueDates(int id){
         RunningAccount runningAccount = runningAccountRepository.findById(id);
-        List<Transaction> allTrasactions = transactionRepository.findAllByRunningAccount(runningAccount);
-        Map<Date, List<Double>> map = new HashMap<>();
+        List<Transaction> allTrasactions = transactionService.getTransactionByRunningAccount(runningAccount);
+        Map<Date, List<List<Double>>> map = new HashMap<>();
         for(Transaction transaction : allTrasactions){
             Date curTransactionDate = transaction.getTransactionDate();
-            map.put(curTransactionDate, new ArrayList<>());
-            map.get(curTransactionDate).add(transaction.getAmount());
-            map.get(curTransactionDate).add(transaction.getPendingAmount());
+            map.putIfAbsent(curTransactionDate, new ArrayList<>());
+            List<Double> list = new ArrayList<>();
+            list.add(transaction.getAmount());
+            list.add(transaction.getPendingAmount());
+            map.get(curTransactionDate).add(list);
         }
         return map;
     }
@@ -152,7 +154,7 @@ public class RunningAccountService {
         if(runningAccount == null)
             return null;
         double dueAmount = totalDueAmount(id);
-        Map<Date, List<Double>> dates = dueDates(id);
+        Map<Date, List<List<Double>>> dates = dueDates(id);
         double availableCredit = availableCredit(id);
         double outstandingBalance = outstandingBalance(id);
         fetchAccountResponse.setDates(dates);

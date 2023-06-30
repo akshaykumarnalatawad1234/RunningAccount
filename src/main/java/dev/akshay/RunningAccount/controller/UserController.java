@@ -14,6 +14,7 @@ public class UserController {
     private UserService userService;
     @RequestMapping(value = "/api/v1/user", method = RequestMethod.POST)
     public ResponseEntity createUser(@RequestBody UserObject userObject){
-        return userService.createUser(userObject);
+        return userService.create(userObject);
     }
+
 }

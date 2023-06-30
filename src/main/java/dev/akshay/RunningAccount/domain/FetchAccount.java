@@ -9,7 +9,7 @@ import java.util.Map;
 @Data
 public class FetchAccount {
     private double dueAmount;
-    private Map<Date, List<Double>> dates;
+    private Map<Date, List<List<Double>>> dates;
     private double availableCredit;
     private double outstandingBalance;
 }
